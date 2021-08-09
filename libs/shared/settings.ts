@@ -8,6 +8,7 @@ export interface Settings {
   sidebar_is_fold: boolean
   last_visit?: string
   locale: Locale
+  injection?: string
 }
 
 export const DEFAULT_SETTINGS: Settings = Object.freeze({
@@ -28,7 +29,14 @@ export function formatSettings(body: Record<string, any> = {}) {
     isNumber(body.split_sizes[0]) &&
     isNumber(body.split_sizes[1])
   ) {
-    settings.split_sizes = [body.split_sizes[0], body.split_sizes[1]]
+    // Sometimes when debugging mode is turned on in the browser,
+    // the size will become abnormal
+    const [size1, size2] = body.split_sizes
+    if (size1 > 100 || size1 < 0 || size2 > 100 || size2 < 0) {
+      settings.split_sizes = DEFAULT_SETTINGS.split_sizes
+    } else {
+      settings.split_sizes = [size1, size2]
+    }
   }
   if (isBoolean(body.sidebar_is_fold)) {
     settings.sidebar_is_fold = body.sidebar_is_fold
@@ -39,6 +47,10 @@ export function formatSettings(body: Record<string, any> = {}) {
 
   if (values(Locale).includes(body.locale)) {
     settings.locale = body.locale
+  }
+
+  if (isString(body.injection)) {
+    settings.injection = body.injection
   }
 
   return settings

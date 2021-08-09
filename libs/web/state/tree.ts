@@ -1,6 +1,6 @@
-import { cloneDeep, isEmpty, map } from 'lodash'
+import { cloneDeep, forEach, isEmpty, map } from 'lodash'
 import { genId } from 'libs/shared/id'
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { createContainer } from 'unstated-next'
 import TreeActions, {
   DEFAULT_TREE,
@@ -12,33 +12,61 @@ import TreeActions, {
 import useNoteAPI from '../api/note'
 import noteCache from '../cache/note'
 import useTreeAPI from '../api/tree'
-import { NOTE_DELETED } from 'libs/shared/meta'
+import { NOTE_DELETED, NOTE_PINNED } from 'libs/shared/meta'
 import { NoteModel } from 'libs/shared/note'
+import { useToast } from '../hooks/use-toast'
+import { uiCache } from '../cache'
+
+const TREE_CACHE_KEY = 'tree'
 
 const useNoteTree = (initData: TreeModel = DEFAULT_TREE) => {
-  const { mutate, loading } = useTreeAPI()
+  const { mutate, loading, fetch: fetchTree } = useTreeAPI()
   const [tree, setTree] = useState<TreeModel>(initData)
   const [initLoaded, setInitLoaded] = useState<boolean>(false)
   const { fetch: fetchNote } = useNoteAPI()
   const treeRef = useRef(tree)
+  const toast = useToast()
 
   useEffect(() => {
     treeRef.current = tree
   }, [tree])
 
+  const fetchNotes = useCallback(
+    async (tree: TreeModel) => {
+      await Promise.all(
+        map(tree.items, async (item) => {
+          item.data = await fetchNote(item.id)
+        })
+      )
+
+      return tree
+    },
+    [fetchNote]
+  )
+
   const initTree = useCallback(async () => {
-    const tree = cloneDeep(treeRef.current)
+    const cache = await uiCache.getItem<TreeModel>(TREE_CACHE_KEY)
+    if (cache) {
+      const treeWithNotes = await fetchNotes(cache)
+      setTree(treeWithNotes)
+    }
 
-    await Promise.all(
-      map(tree.items, async (item) => {
-        item.data = await fetchNote(item.id)
-      })
-    )
+    const tree = await fetchTree()
 
-    setTree(tree)
+    if (!tree) {
+      toast('Failed to load tree', 'error')
+      return
+    }
+
+    const treeWithNotes = await fetchNotes(tree)
+
+    setTree(treeWithNotes)
+    await Promise.all([
+      uiCache.setItem(TREE_CACHE_KEY, tree),
+      noteCache.checkItems(tree.items),
+    ])
     setInitLoaded(true)
-    await noteCache.checkItems(tree.items)
-  }, [fetchNote])
+  }, [fetchNotes, fetchTree, toast])
 
   const addItem = useCallback((item: NoteModel) => {
     const tree = TreeActions.addItem(treeRef.current, item.id, item.pid)
@@ -133,8 +161,33 @@ const useNoteTree = (initData: TreeModel = DEFAULT_TREE) => {
     return paths
   }, [])
 
+  const pinnedTree = useMemo(() => {
+    const items = cloneDeep(tree.items)
+    const pinnedIds: string[] = []
+    forEach(items, (item) => {
+      if (
+        item.data?.pinned === NOTE_PINNED.PINNED &&
+        item.data.deleted !== NOTE_DELETED.DELETED
+      ) {
+        pinnedIds.push(item.id)
+      }
+    })
+
+    items[ROOT_ID] = {
+      id: ROOT_ID,
+      children: pinnedIds,
+      isExpanded: true,
+    }
+
+    return {
+      ...tree,
+      items,
+    }
+  }, [tree])
+
   return {
     tree,
+    pinnedTree,
     initTree,
     genNewId,
     addItem,

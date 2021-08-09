@@ -9,8 +9,9 @@ import noteCache from 'libs/web/cache/note'
 import useSettingsAPI from 'libs/web/api/settings'
 import dynamic from 'next/dynamic'
 import { useToast } from 'libs/web/hooks/use-toast'
+import DeleteAlert from 'components/editor/delete-alert'
 
-const NoteEdit = dynamic(() => import('components/editor/note-edit'))
+const MainEditor = dynamic(() => import('components/editor/main-editor'))
 
 export const EditContainer = () => {
   const {
@@ -20,6 +21,7 @@ export const EditContainer = () => {
   const { genNewId } = NoteTreeState.useContainer()
   const {
     fetchNote,
+    abortFindNote,
     findOrCreateNote,
     initNote,
     note,
@@ -27,6 +29,7 @@ export const EditContainer = () => {
   const { query } = useRouter()
   const pid = query.pid as string
   const id = query.id as string
+  const isNew = has(query, 'new')
   const { mutate: mutateSettings } = useSettingsAPI()
   const toast = useToast()
 
@@ -44,11 +47,19 @@ export const EditContainer = () => {
         const url = `/${genNewId()}?new` + (pid ? `&pid=${pid}` : '')
 
         router.replace(url, undefined, { shallow: true })
-      } else if (id && !has(router.query, 'new')) {
-        fetchNote(id).catch((msg) => {
-          toast(msg.message, 'error')
-          router.push('/', undefined, { shallow: true })
-        })
+      } else if (id && !isNew) {
+        try {
+          const result = await fetchNote(id)
+          if (!result) {
+            router.replace({ query: { ...router.query, new: 1 } })
+            return
+          }
+        } catch (msg) {
+          if (msg.name !== 'AbortError') {
+            toast(msg.message, 'error')
+            router.push('/', undefined, { shallow: true })
+          }
+        }
       } else {
         if (await noteCache.getItem(id)) {
           router.push(`/${id}`, undefined, { shallow: true })
@@ -61,12 +72,14 @@ export const EditContainer = () => {
         })
       }
 
-      mutateSettings({
-        last_visit: `/${id}`,
-      })
+      if (!isNew && id !== 'new') {
+        mutateSettings({
+          last_visit: `/${id}`,
+        })
+      }
     },
     [
-      mutateSettings,
+      isNew,
       findOrCreateNote,
       settings.daily_root_id,
       genNewId,
@@ -74,12 +87,14 @@ export const EditContainer = () => {
       fetchNote,
       toast,
       initNote,
+      mutateSettings,
     ]
   )
 
   useEffect(() => {
+    abortFindNote()
     loadNoteById(id)
-  }, [loadNoteById, id])
+  }, [loadNoteById, abortFindNote, id])
 
   useEffect(() => {
     updateTitle(note?.title)
@@ -88,8 +103,9 @@ export const EditContainer = () => {
   return (
     <>
       <NoteNav />
-      <section className="overflow-y-scroll h-full">
-        <NoteEdit />
+      <DeleteAlert />
+      <section className="h-full">
+        <MainEditor />
       </section>
     </>
   )

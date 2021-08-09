@@ -6,7 +6,7 @@ const renderGutter = () => {
   const gutter = document.createElement('div')
   const line = document.createElement('div')
 
-  gutter.className = 'gutter group cursor-col-resize -ml-1.5 px-1.5'
+  gutter.className = 'gutter group cursor-col-resize z-20'
   line.className =
     'transition-colors delay-150 group-hover:bg-gray-300 dark:group-hover:bg-gray-500 w-1 h-full'
   gutter.appendChild(line)
@@ -19,7 +19,7 @@ const Resizable: FC<{ width: number }> = ({ width, children }) => {
   const {
     split: { saveSizes, resize, sizes },
     ua: { isMobileOnly },
-    sidebar: { visible },
+    sidebar: { isFold },
   } = UIState.useContainer()
   const lastWidthRef = useRef(width)
 
@@ -33,11 +33,11 @@ const Resizable: FC<{ width: number }> = ({ width, children }) => {
   }, [resize, width])
 
   useEffect(() => {
-    splitRef.current?.split?.setSizes(sizes)
-    if (visible) {
+    if (isFold) {
       splitRef.current?.split?.collapse(0)
     }
-  }, [visible, sizes, width])
+    // width 改变引起 sizes 重置
+  }, [isFold, sizes])
 
   const updateSplitSizes = useCallback(
     async (sizes: [number, number]) => {
@@ -53,9 +53,11 @@ const Resizable: FC<{ width: number }> = ({ width, children }) => {
   return (
     <Split
       ref={splitRef}
-      className="flex h-full"
-      minSize={visible ? 40 : 250}
+      className="flex h-auto justify-end"
+      // w-12
+      minSize={isFold ? 48 : 250}
       sizes={sizes}
+      gutterSize={0}
       gutter={renderGutter}
       onDragEnd={updateSplitSizes}
     >

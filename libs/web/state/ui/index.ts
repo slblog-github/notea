@@ -19,15 +19,25 @@ interface Props {
   ua?: UserAgentType
   settings?: Settings
   disablePassword?: boolean
+  IS_DEMO?: boolean
 }
-function useUI({ ua = DEFAULT_UA, settings, disablePassword }: Props = {}) {
+function useUI({
+  ua = DEFAULT_UA,
+  settings,
+  disablePassword,
+  IS_DEMO,
+}: Props = {}) {
   return {
     ua,
-    sidebar: useSidebar(ua?.isMobileOnly ? false : settings?.sidebar_is_fold),
+    sidebar: useSidebar(
+      ua?.isMobileOnly ? false : settings?.sidebar_is_fold,
+      ua.isMobileOnly
+    ),
     split: useSplit(settings?.split_sizes),
     title: useTitle(),
     settings: useSettings(settings),
     disablePassword,
+    IS_DEMO,
   }
 }
 

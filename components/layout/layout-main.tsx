@@ -12,12 +12,14 @@ import SearchState from 'libs/web/state/search'
 import SearchModal from 'components/portal/search-modal/search-modal'
 import ShareModal from 'components/portal/share-modal'
 import { SwipeableDrawer } from '@material-ui/core'
-import SidebarMenu from 'components/portal/sidebar-menu'
+import SidebarMenu from 'components/portal/sidebar-menu/sidebar-menu'
 import { NoteModel } from 'libs/shared/note'
+import PreviewModal from 'components/portal/preview-modal'
+import LinkToolbar from 'components/portal/link-toolbar/link-toolbar'
 
 const MainWrapper: FC = ({ children }) => {
   const {
-    sidebar: { visible },
+    sidebar: { isFold },
   } = UIState.useContainer()
   const { ref, width = 0 } = useResizeDetector<HTMLDivElement>({
     handleHeight: false,
@@ -27,12 +29,12 @@ const MainWrapper: FC = ({ children }) => {
     <div className="h-full" ref={ref}>
       <Resizable width={width}>
         <Sidebar />
-        <main className="relative flex-grow">{children}</main>
+        <main className="relative">{children}</main>
       </Resizable>
       <style jsx global>
         {`
           .gutter {
-            pointer-events: ${visible ? 'none' : 'auto'};
+            pointer-events: ${isFold ? 'none' : 'auto'};
           }
         `}
       </style>
@@ -42,14 +44,14 @@ const MainWrapper: FC = ({ children }) => {
 
 const MobileMainWrapper: FC = ({ children }) => {
   const {
-    sidebar: { visible, open, close },
+    sidebar: { isFold, open, close },
   } = UIState.useContainer()
 
   return (
     <div className="flex h-full">
       <SwipeableDrawer
         anchor="left"
-        open={visible}
+        open={isFold}
         onClose={close}
         onOpen={open}
         hysteresis={0.4}
@@ -59,7 +61,7 @@ const MobileMainWrapper: FC = ({ children }) => {
         <Sidebar />
       </SwipeableDrawer>
 
-      <main className="flex-grow overflow-y-auto" onClick={close}>
+      <main className="flex-grow" onClick={close}>
         {children}
       </main>
       <style jsx global>
@@ -80,7 +82,7 @@ const LayoutMain: FC<{
   const { ua } = UIState.useContainer()
 
   useEffect(() => {
-    document.body.classList.add('overflow-hidden')
+    document.body.classList.add('overscroll-none')
   }, [])
 
   return (
@@ -101,6 +103,8 @@ const LayoutMain: FC<{
           <SearchModal />
         </SearchState.Provider>
         <ShareModal />
+        <PreviewModal />
+        <LinkToolbar />
         <SidebarMenu />
       </NoteState.Provider>
     </NoteTreeState.Provider>

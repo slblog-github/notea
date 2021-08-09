@@ -1,4 +1,4 @@
-import { ironSession} from 'next-iron-session'
+import { ironSession } from 'next-iron-session'
 import md5 from 'md5'
 import { getEnv } from 'libs/shared/env'
 

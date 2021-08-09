@@ -1,6 +1,5 @@
 import LayoutMain from 'components/layout/layout-main'
 import { NextPage } from 'next'
-import { applyTree } from 'libs/server/middlewares/tree'
 import { applyUA } from 'libs/server/middlewares/ua'
 import { TreeModel } from 'libs/shared/tree'
 import { useSession } from 'libs/server/middlewares/session'
@@ -11,6 +10,7 @@ import useI18n from 'libs/web/hooks/use-i18n'
 import { applyCsrf } from 'libs/server/middlewares/csrf'
 import { SettingFooter } from 'components/settings/setting-footer'
 import { SSRContext, ssr } from 'libs/server/connect'
+import { applyReset } from 'libs/server/middlewares/reset'
 
 const SettingsPage: NextPage<{ tree: TreeModel }> = ({ tree }) => {
   const { t } = useI18n()
@@ -18,9 +18,9 @@ const SettingsPage: NextPage<{ tree: TreeModel }> = ({ tree }) => {
   return (
     <LayoutMain tree={tree}>
       <section className="py-40 h-full overflow-y-auto">
-        <div className="px-6 prose m-auto">
-          <h1>
-            <span className="font-normal">{t('Settings')}</span>
+        <div className="px-6 max-w-prose m-auto">
+          <h1 className="font-normal text-4xl mb-10">
+            <span>{t('Settings')}</span>
           </h1>
 
           <SettingsContainer />
@@ -37,7 +37,7 @@ export const getServerSideProps = async (ctx: SSRContext) => {
   await ssr()
     .use(useSession)
     .use(applyAuth)
-    .use(applyTree)
+    .use(applyReset)
     .use(applySettings)
     .use(applyCsrf)
     .use(applyUA)

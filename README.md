@@ -16,11 +16,13 @@
 
 - Link: https://notea.cinwell.com
 
-## Requirement
+## Roadmap
 
-- [Next.js](https://nextjs.org/)
-- [S3](https://docs.aws.amazon.com/AmazonS3/latest/userguide/Welcome.html)
-- [Vercel](https://vercel.com/), [Netlify](https://www.netlify.com/) or [Docker](https://www.docker.com/)
+- [x] Backlinks [#39](https://github.com/QingWei-Li/notea/issues/39)
+- [x] Link embed(Youtube, Github Gist, Google Docs, etc.)
+- [ ] Editing offline [#14](https://github.com/QingWei-Li/notea/issues/14)
+- [ ] Note versioning [#49](https://github.com/QingWei-Li/notea/issues/49)
+- [ ] File upload
 
 ## Quickstart
 
@@ -50,6 +52,7 @@ docker run -d \
   -e STORE_END_POINT=http://play.minio.io \
   -e STORE_FORCE_PATH_STYLE=true \
   -e PASSWORD=notea \
+  # -e COOKIE_SECURE=false \ # This is required on non-https sites
   cinwell/notea
 ```
 
@@ -78,7 +81,7 @@ STORE_BUCKET=notea
 STORE_END_POINT=http://localhost:9000
 # Required
 STORE_FORCE_PATH_STYLE=true
-PASSWORD=
+PASSWORD=notea
 ```
 
 ### Amazon S3
@@ -90,7 +93,7 @@ STORE_ACCESS_KEY=
 STORE_SECRET_KEY=
 STORE_BUCKET=notea
 STORE_REGION=us-east-1
-PASSWORD=
+PASSWORD=notea
 ```
 
 ### Aliyun OSS
@@ -103,7 +106,7 @@ STORE_SECRET_KEY=
 STORE_BUCKET=notea
 STORE_END_POINT=https://oss-cn-hangzhou.aliyuncs.com
 STORE_REGION=oss-cn-hangzhou
-PASSWORD=
+PASSWORD=notea
 ```
 
 ### Tencent COS
@@ -116,7 +119,7 @@ STORE_SECRET_KEY=
 STORE_BUCKET=notea # create the bucket first
 STORE_END_POINT=https://cos.ap-guangzhou.myqcloud.com
 STORE_REGION=ap-guangzhou
-PASSWORD=
+PASSWORD=notea
 ```
 
 ### Oracle Object Storage
@@ -130,7 +133,7 @@ STORE_END_POINT=https://nampespace.compat.objectstorage.ap-chuncheon-1.oracleclo
 STORE_FORCE_PATH_STYLE=true
 STORE_BUCKET=bucketname
 STORE_REGION=ap-chuncheon-1
-PASSWORD=
+PASSWORD=notea
 
 #  bucketname，namespace and region “ap-chuncheon-1” need check your profile and https://docs.oracle.com/en-us/iaas/api/#/en/s3objectstorage/20160918/
 ```
@@ -146,7 +149,7 @@ STORE_BUCKET=notea # create the bucket first
 STORE_END_POINT=https://sos-de-fra-1.exo.io
 STORE_REGION=de-fra-1
 STORE_FORCE_PATH_STYLE=true
-PASSWORD=
+PASSWORD=notea
 ```
 
 Other services that support the s3 protocol can also be used.

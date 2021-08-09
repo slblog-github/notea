@@ -1,15 +1,16 @@
 import { useCallback, useState } from 'react'
 import { createContainer } from 'unstated-next'
 import NoteTreeState from 'libs/web/state/tree'
-import { NOTE_DELETED, NOTE_SHARED } from 'libs/shared/meta'
+import { NOTE_DELETED, NOTE_PINNED, NOTE_SHARED } from 'libs/shared/meta'
 import useNoteAPI from '../api/note'
 import noteCache from '../cache/note'
 import { NoteModel } from 'libs/shared/note'
 import { useToast } from '../hooks/use-toast'
+import { isEmpty, map } from 'lodash'
 
 const useNote = (initData?: NoteModel) => {
   const [note, setNote] = useState<NoteModel | undefined>(initData)
-  const { find } = useNoteAPI()
+  const { find, abort: abortFindNote } = useNoteAPI()
   const { create, error: createError } = useNoteAPI()
   const { mutate, loading, abort } = useNoteAPI()
   const {
@@ -29,23 +30,74 @@ const useNote = (initData?: NoteModel) => {
       const result = await find(id)
 
       if (!result) {
-        throw new Error(`not found note:${id}`)
+        return
       }
 
       result.content = result.content || '\n'
       setNote(result)
       await noteCache.setItem(id, result)
+
+      return result
     },
     [find]
   )
 
   const removeNote = useCallback(
     async (id: string) => {
-      await mutate(id, { deleted: NOTE_DELETED.DELETED })
-      await noteCache.mutateItem(id, { deleted: NOTE_DELETED.DELETED })
+      const payload = {
+        deleted: NOTE_DELETED.DELETED,
+      }
+
+      setNote((prev) => {
+        if (prev?.id === id) {
+          return { ...prev, ...payload }
+        }
+        return prev
+      })
+      await mutate(id, payload)
+      await noteCache.mutateItem(id, payload)
       await removeItem(id)
     },
     [mutate, removeItem]
+  )
+
+  const mutateNote = useCallback(
+    async (id: string, payload: Partial<NoteModel>) => {
+      const note = await noteCache.getItem(id)
+
+      if (!note) {
+        // todo
+        console.error('mutate note error')
+        return
+      }
+
+      const diff: Partial<NoteModel> = {}
+      map(payload, (value: any, key: keyof NoteModel) => {
+        if (note[key] !== value) {
+          diff[key] = value
+        }
+      })
+
+      if (isEmpty(diff)) {
+        return
+      }
+
+      setNote((prev) => {
+        if (prev?.id === id) {
+          return { ...prev, ...payload }
+        }
+        return prev
+      })
+      await mutate(id, payload)
+      await noteCache.mutateItem(id, payload)
+      await mutateItem(id, {
+        data: {
+          ...note,
+          ...payload,
+        },
+      })
+    },
+    [mutate, mutateItem]
   )
 
   const createNote = useCallback(
@@ -88,6 +140,9 @@ const useNote = (initData?: NoteModel) => {
     [addItem, create, genNewId]
   )
 
+  /**
+   * TODO: merge with mutateNote
+   */
   const updateNote = useCallback(
     async (data: Partial<NoteModel>) => {
       abort()
@@ -115,6 +170,7 @@ const useNote = (initData?: NoteModel) => {
     setNote({
       deleted: NOTE_DELETED.NORMAL,
       shared: NOTE_SHARED.PRIVATE,
+      pinned: NOTE_PINNED.UNPINNED,
       id: '-1',
       title: '',
       ...note,
@@ -124,7 +180,10 @@ const useNote = (initData?: NoteModel) => {
   const findOrCreateNote = useCallback(
     async (id: string, note: Partial<NoteModel>) => {
       try {
-        await fetchNote(id)
+        const data = await fetchNote(id)
+        if (!data) {
+          throw data
+        }
       } catch (e) {
         await createNote({
           id,
@@ -138,11 +197,13 @@ const useNote = (initData?: NoteModel) => {
   return {
     note,
     fetchNote,
+    abortFindNote,
     createNote,
     findOrCreateNote,
     createNoteWithTitle,
     updateNote,
     removeNote,
+    mutateNote,
     initNote,
     loading,
   }

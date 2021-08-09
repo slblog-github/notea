@@ -25,6 +25,7 @@ const HotkeyTooltip: FC<{
   optionKey?: boolean
   onClose?: TooltipProps['onClose']
   onHotkey?: () => void
+  disableOnContentEditable?: boolean
 }> = ({
   text,
   keys = [],
@@ -33,6 +34,7 @@ const HotkeyTooltip: FC<{
   commandKey,
   optionKey,
   onHotkey = noop,
+  disableOnContentEditable = false,
 }) => {
   const {
     ua: { isMac },
@@ -56,8 +58,9 @@ const HotkeyTooltip: FC<{
     {
       enabled: !!keys.length,
       enableOnTags: ['INPUT', 'TEXTAREA'],
-      enableOnContentEditable: true,
-    }
+      enableOnContentEditable: !disableOnContentEditable,
+    },
+    [onHotkey]
   )
 
   return (

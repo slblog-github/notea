@@ -1,19 +1,22 @@
 import SidebarListItem from './sidebar-list-item'
 import NoteTreeState from 'libs/web/state/tree'
 import Tree from '@atlaskit/tree'
-import { useEffect, useCallback } from 'react'
+import { useCallback } from 'react'
 import router from 'next/router'
 import HotkeyTooltip from 'components/hotkey-tooltip'
 import IconButton from 'components/icon-button'
 import useI18n from 'libs/web/hooks/use-i18n'
+import { CircularProgress } from '@material-ui/core'
+import { Favorites } from './favorites'
 
 const SideBarList = () => {
   const { t } = useI18n()
-  const { tree, initTree, moveItem, mutateItem } = NoteTreeState.useContainer()
-
-  useEffect(() => {
-    initTree()
-  }, [initTree])
+  const {
+    tree,
+    moveItem,
+    mutateItem,
+    initLoaded,
+  } = NoteTreeState.useContainer()
 
   const onExpand = useCallback(
     (id) => {
@@ -51,9 +54,18 @@ const SideBarList = () => {
   }, [])
 
   return (
-    <section className="h-full flex text-sm flex-col flex-grow bg-gray-100 overflow-hidden">
-      <div className="p-2 text-gray-500 flex items-center">
-        <span className="flex-auto">{t('My Pages')}</span>
+    <section className="h-full flex text-sm flex-col flex-grow bg-gray-100 overflow-y-auto">
+      {/* Favorites */}
+      <Favorites />
+
+      {/* My Pages */}
+      <div className="p-2 text-gray-500 flex items-center sticky top-0 bg-gray-100 z-10">
+        <div className="flex-auto flex items-center">
+          <span>{t('My Pages')}</span>
+          {initLoaded ? null : (
+            <CircularProgress className="ml-4" size="14px" color="inherit" />
+          )}
+        </div>
         <HotkeyTooltip
           text={t('Create page')}
           commandKey
@@ -67,7 +79,7 @@ const SideBarList = () => {
           ></IconButton>
         </HotkeyTooltip>
       </div>
-      <div className="flex-grow overflow-y-auto pb-10">
+      <div className="flex-grow pb-10">
         <Tree
           onExpand={onExpand}
           onCollapse={onCollapse}

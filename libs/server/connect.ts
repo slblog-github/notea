@@ -26,6 +26,7 @@ export interface ServerState {
 
 export interface ServerProps {
   isLoggedIn: boolean
+  IS_DEMO: boolean
   csrfToken?: string
   pageMode: PageMode
   note?: NoteModel
@@ -35,7 +36,6 @@ export interface ServerProps {
   tree?: TreeModel
   ua?: UserAgentType
   disablePassword: boolean
-  post: string
 }
 
 export type ApiRequest = NextApiRequest & {
@@ -78,4 +78,4 @@ export type SSRContext = GetServerSidePropsContext & {
   res: ApiResponse
 }
 
-export type SSRMiddeware = Middleware<ApiRequest, ApiResponse>
+export type SSRMiddleware = Middleware<ApiRequest, ApiResponse>

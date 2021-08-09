@@ -48,7 +48,7 @@ const SidebarListItem: FC<{
   const { query } = useRouter()
   const { mutateItem, initLoaded } = NoteTreeState.useContainer()
   const {
-    menu: { open, setData },
+    menu: { open, setData, setAnchor },
   } = PortalState.useContainer()
 
   const onAddNote = useCallback(
@@ -65,10 +65,11 @@ const SidebarListItem: FC<{
   const handleClickMenu = useCallback(
     (event: MouseEvent) => {
       event.preventDefault()
-      open(event.currentTarget)
+      setAnchor(event.target as Element)
+      open()
       setData(item)
     },
-    [item, open, setData]
+    [item, open, setAnchor, setData]
   )
 
   return (
@@ -104,7 +105,7 @@ const SidebarListItem: FC<{
               }}
             ></IconButton>
             <span className="flex-1 truncate" dir="auto">
-              {initLoaded ? item.title || t('Untitled') : <TextSkeleton />}
+              {item.title || (initLoaded ? t('Untitled') : <TextSkeleton />)}
             </span>
           </a>
         </Link>
